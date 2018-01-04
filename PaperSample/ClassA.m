@@ -18,6 +18,11 @@
 
 @implementation ClassA
 
+- (NSObject *)obj
+{
+    return _obj;
+}
+
 - (instancetype)init
 {
     self = [super init];

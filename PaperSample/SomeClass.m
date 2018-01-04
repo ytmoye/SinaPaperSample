@@ -36,68 +36,37 @@
     NSLog(@"%@ dealloc!", NSStringFromClass([self class]));
 }
 
-/** 第一种方法：在消息转发第二步处理,把这个方法注释掉，就会走第三步，参考 https://developer.apple.com/documentation/objectivec/nsobject/1418855-forwardingtargetforselector */
+//第一种方法，在这里动态添加
++ (BOOL)resolveInstanceMethod:(SEL)sel
+{
+    if (sel == @selector(doSomethingElse:)) {
+        class_addMethod([self class], sel, (IMP)dynamicMethodIMP, "v@:");
+        return YES;
+    }
+    return [super resolveInstanceMethod:sel];
+}
+
+void dynamicMethodIMP(id self, SEL _cmd) {
+    NSLog(@"%@ is called", NSStringFromSelector(_cmd));
+}
+
+/**
+ Forwarding methods (as described in Message Forwarding) and dynamic method resolution are, largely, orthogonal. A class has the opportunity to dynamically resolve a method before the forwarding mechanism kicks in. If respondsToSelector: or instancesRespondToSelector: is invoked, the dynamic method resolver is given the opportunity to provide an IMP for the selector first. If you implement resolveInstanceMethod: but want particular selectors to actually be forwarded via the forwarding mechanism, you return NO for those selectors.
+ */
+
+/** 第二种方法：在消息转发第二步处理,把这个方法注释掉，就会走第三步，参考 https://developer.apple.com/documentation/objectivec/nsobject/1418855-forwardingtargetforselector */
 - (id)forwardingTargetForSelector:(SEL)aSelector {
-//    if ([self respondsToSelector:aSelector]) {
-//        return self;
-//    } else {
-//        if (!forwardClass) {
-//            forwardClass = [[ForwardClass alloc] init];
-//        }
-//        return forwardClass;
-//    }
-    
-    //除了上面的办法，也可以在这里也可以动态创建类，并动态添加方法，参考 http://www.jianshu.com/p/521dd19d4406
-    NSString *selectorStr = NSStringFromSelector(aSelector);
-    Class protectorCls = NSClassFromString(@"Protector");
-    if (!protectorCls)
-    {
-        protectorCls = objc_allocateClassPair([NSObject class], "Protector", 0);
-        objc_registerClassPair(protectorCls);
-    }
-    
-    // 检查类中是否存在该方法，不存在则添加
-    if (![self isExistSelector:aSelector inClass:protectorCls])
-    {
-        class_addMethod(protectorCls, aSelector, [self safeImplementation:aSelector],
-                        [selectorStr UTF8String]);
-    }
-    
-    Class Protector = [protectorCls class];
-    id instance = [[Protector alloc] init];
-    return instance;
-}
-
-- (IMP)safeImplementation:(SEL)aSelector
-{
-    IMP imp = imp_implementationWithBlock(^(){
-        NSLog(@"%@ is called", NSStringFromSelector(aSelector));
-    });
-    return imp;
-}
-
-
-- (BOOL)isExistSelector: (SEL)aSelector inClass:(Class)currentClass
-{
-    BOOL isExist = NO;
-    unsigned int methodCount = 0;
-    Method *methods = class_copyMethodList(currentClass, &methodCount);
-    
-    for (int i = 0; i < methodCount; i++)
-    {
-        Method temp = methods[i];
-        SEL sel = method_getName(temp);
-        NSString *methodName = NSStringFromSelector(sel);
-        if ([methodName isEqualToString: NSStringFromSelector(aSelector)])
-        {
-            isExist = YES;
-            break;
+    if ([self respondsToSelector:aSelector]) {
+        return self;
+    } else {
+        if (!forwardClass) {
+            forwardClass = [[ForwardClass alloc] init];
         }
+        return forwardClass;
     }
-    return isExist;
 }
 
-/** 第二种方法：在消息转发第三步处理，参考： https://developer.apple.com/documentation/objectivec/nsobject/1571955-forwardinvocation?language=objc */
+/** 第三种方法：在消息转发第三步处理，参考： https://developer.apple.com/documentation/objectivec/nsobject/1571955-forwardinvocation?language=objc */
 -(void)forwardInvocation:(NSInvocation *)invocation
 {
     //把注释打开也可以不崩溃，就不会调用forwardClass的方法

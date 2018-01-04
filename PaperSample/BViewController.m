@@ -67,11 +67,10 @@ static void runLoopObserverSetup() {
     [super viewDidLoad];
     
     //建立对runLoop的监听
-    runLoopObserverSetup();
+//    runLoopObserverSetup();
     
     _myButton = [MyButton buttonWithType:UIButtonTypeCustom];
     _myButton.frame = CGRectMake(100, 100, 200, 200);
-    [_myButton retain];
     [_myButton setTitle:@"返回A" forState:UIControlStateNormal];
     [_myButton setTitleColor:[UIColor blueColor] forState:UIControlStateNormal];
     [_myButton addTarget:self action:@selector(back) forControlEvents:UIControlEventTouchUpInside];
@@ -106,25 +105,8 @@ static void runLoopObserverSetup() {
 
 - (void)dealloc
 {
-    [_myButton release];
     NSLog(@"%@ dealloc!", NSStringFromClass([self class]));
     [super dealloc];
 }
-
-- (void)didReceiveMemoryWarning {
-    [super didReceiveMemoryWarning];
-    
-    
-}
-
-/*
-#pragma mark - Navigation
-
-// In a storyboard-based application, you will often want to do a little preparation before navigation
-- (void)prepareForSegue:(UIStoryboardSegue *)segue sender:(id)sender {
-    // Get the new view controller using [segue destinationViewController].
-    // Pass the selected object to the new view controller.
-}
-*/
 
 @end
